@@ -1,0 +1,1 @@
+deps_perftest = {"packs": ["http-svr", "uuid", "stdext", "xcp-inventory", "stunnel", "rpclib", "xcp", "xml-light2"], "libs": ["version", "fhs", "common", "client"]}

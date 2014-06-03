@@ -1,0 +1,1 @@
+deps_stats = {"packs": ["xcp", "http-svr", "uuid", "xcp-inventory"], "libs": ["fhs"]}

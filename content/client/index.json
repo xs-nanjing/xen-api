@@ -1,0 +1,1 @@
+deps_client = {"packs": ["http-svr", "uuid", "stdext", "sexpr", "stunnel", "xml-light2", "gzip", "rpclib"], "libs": ["version", "fhs", "stats"]}

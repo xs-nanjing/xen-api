@@ -1,0 +1,1 @@
+deps_datamodel = {"packs": ["http-svr", "uuid", "sexpr", "rpclib", "xcp", "xml-light2"], "libs": ["fhs", "version", "stats"]}

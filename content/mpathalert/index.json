@@ -1,0 +1,1 @@
+deps_mpathalert = {"packs": ["http-svr", "uuid", "stdext", "stunnel", "rpclib", "xcp", "xml-light2"], "libs": ["version", "common", "client"]}

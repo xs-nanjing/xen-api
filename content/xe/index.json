@@ -1,0 +1,1 @@
+deps_xe = {"packs": ["xml-light2", "xcp", "stunnel", "stdext"], "libs": ["fhs", "common", "client"]}

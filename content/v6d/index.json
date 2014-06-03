@@ -1,0 +1,1 @@
+deps_v6d = {"packs": ["http-svr", "stdext", "stunnel", "rpclib", "xcp", "xml-light2"], "libs": ["version", "xapi_client"]}

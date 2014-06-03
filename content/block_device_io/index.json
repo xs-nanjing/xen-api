@@ -1,0 +1,1 @@
+deps_block_device_io = {"packs": ["http-svr", "uuid", "stdext", "xcp-inventory", "sexpr", "stunnel", "rpclib", "xcp", "xml-light2", "gzip"], "libs": ["fhs", "version", "stats"]}
