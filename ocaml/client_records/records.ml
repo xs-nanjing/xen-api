@@ -647,6 +647,19 @@ let vm_record rpc session_id vm =
 			)
 		with _ -> "<unknown>"
 	in
+	let get_free_memory () =
+		try
+			Int64.to_string (
+				try
+					Int64.mul 1024L (Int64.of_float (
+						Client.VM.query_data_source
+							rpc session_id !_ref "memory_internal_free"
+					))
+				with Api_errors.Server_error (code, _)
+						when code = Api_errors.vm_bad_power_state -> 0L
+			)
+		with _ -> "<unknown>"
+	in
 	let xgm () = lzy_get guest_metrics in
 	{
 	  setref = (fun r -> _ref := r; record := empty_record );
@@ -692,6 +705,8 @@ let vm_record rpc session_id vm =
 				~get:(fun () -> default nid (may (fun m -> Int64.to_string m.API.vM_metrics_memory_actual) (xm ()) )) ();
 			make_field ~name:"memory-target" ~expensive:true
 				~get:(fun () -> get_memory_target ()) ();
+			make_field ~name:"memory-free" ~expensive:true
+				~get:(fun () -> get_free_memory ()) ();
 			make_field ~name:"memory-overhead"
 				~get:(fun () -> Int64.to_string (x ()).API.vM_memory_overhead) ();
 			make_field ~name:"memory-static-max"
