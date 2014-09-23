@@ -40,6 +40,7 @@ let _uncooperative       = "/memory/uncooperative"        (* mutable: written by
 
 let _dynamic_min         = "/memory/dynamic-min"          (* mutable: written by domain manager *)
 let _dynamic_max         = "/memory/dynamic-max"          (* mutable: written by domain manager *)
+let _meminfo_free        = "/data/meminfo_free"          (* mutable: written by domain manager *)
 
 let ( ** ) = Int64.mul
 let ( +* ) = Int64.add
@@ -97,6 +98,7 @@ module Domain = struct
 	        [ "memory";  "uncooperative" ];
 	        [ "memory";  "dynamic-min" ];
 	        [ "memory";  "dynamic-max" ];
+	        [ "data";    "meminfo_free" ];
 	]
 
 	let interesting_paths_for_domain domid uuid = 
@@ -266,6 +268,10 @@ module Domain = struct
   (** Query a domain's dynamic_max. Throws Xenbus.Xb.Noent if the domain has been destroyed *)
   let get_dynamic_max cnx domid = 
 	Int64.of_string (read cnx domid _dynamic_max)
+
+  (** Query a domain's meminfo_free. Throws Xenbus.Xb.Noent if the domain has been destroyed *)
+  let get_free_internal cnx domid = 
+    Int64.of_string (read cnx domid _meminfo_free)
 end
 
 
@@ -392,6 +398,7 @@ let make_host ~verbose ~xc ~xs =
 						memory_actual_kib = 0L;
 						memory_max_kib = memory_max_kib;
 						inaccuracy_kib = 4L;
+						mem_free_kib = 0L;
 					  } in
 					
 					(* If the domain has never run (detected by being paused, not shutdown and clocked up no CPU time)
@@ -416,18 +423,20 @@ let make_host ~verbose ~xc ~xs =
 						let target_kib = Domain.get_target cnx di.domid in
 						(* min and max are written separately; if we notice they *)
 						(* are missing set them both to the target for now.      *)
-						let min_kib, max_kib =
+						let min_kib, max_kib, free_kib=
 						try
 						  Domain.get_dynamic_min cnx di.domid,
-						  Domain.get_dynamic_max cnx di.domid
+						  Domain.get_dynamic_max cnx di.domid,
+						  Domain.get_free_internal cnx di.domid
 						with _ ->
-							target_kib, target_kib
+							target_kib, target_kib, 0L
 						in
 						 [ { domain with Squeeze.
 						      dynamic_min_kib = min_kib;
 						      dynamic_max_kib = max_kib;
 						      target_kib = target_kib;
-						      memory_actual_kib = memory_actual_kib
+						      memory_actual_kib = memory_actual_kib;
+						      mem_free_kib = free_kib
 						  } ]
 					end
 				with

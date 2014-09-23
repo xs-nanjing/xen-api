@@ -65,10 +65,12 @@ type domain = {
 	memory_max_kib: int64;
 	(** amount by which the target may differ from memory_actual and be declared a 'hit' *)
 	inaccuracy_kib: int64;
+	(** current unused memory size *)
+	mem_free_kib: int64;
 }
 
 let domain_make
-	domid can_balloon dynamic_min_kib target_kib dynamic_max_kib memory_actual_kib memory_max_kib inaccuracy_kib =
+	domid can_balloon dynamic_min_kib target_kib dynamic_max_kib memory_actual_kib memory_max_kib inaccuracy_kib mem_free_kib =
 	{
 		domid = domid;
 		can_balloon = can_balloon;
@@ -78,6 +80,7 @@ let domain_make
 		memory_actual_kib = memory_actual_kib;
 		memory_max_kib = memory_max_kib;
 		inaccuracy_kib = inaccuracy_kib;
+		mem_free_kib = mem_free_kib;
 	}
 
 let domain_to_string_pairs (x: domain) = 
@@ -91,6 +94,7 @@ let domain_to_string_pairs (x: domain) =
 		"memory_actual_kib", i64 x.memory_actual_kib;
 		"memory_max_kib", i64 x.memory_max_kib;
 		"inaccuracy_kib", i64 x.inaccuracy_kib;
+		"mem_free_kib", i64 x.mem_free_kib;
 	]
 
 module IntMap = Map.Make(struct type t = int let compare = compare end)
@@ -171,8 +175,8 @@ let has_hit_target inaccuracy_kib memory_actual_kib target_kib =
   direction_of_actual inaccuracy_kib memory_actual_kib target_kib = None
 
 let short_string_of_domain domain = 
-  Printf.sprintf "%d T%Ld A%Ld M%Ld %s%s" domain.domid
-    domain.target_kib domain.memory_actual_kib domain.memory_max_kib
+  Printf.sprintf "%d T%Ld A%Ld M%Ld F%Ld %s%s" domain.domid
+    domain.target_kib domain.memory_actual_kib domain.memory_max_kib domain.mem_free_kib
     (if domain.can_balloon then "B" else "?")
     (string_of_direction (direction_of_actual domain.inaccuracy_kib domain.memory_actual_kib domain.target_kib))
 
@@ -585,6 +589,7 @@ let free_memory_range ?fistpoints io min_kib max_kib =
 		 memory_actual_kib = 0L;
 		 memory_max_kib = 0L;
 		 inaccuracy_kib = 4L;
+		 mem_free_kib = 0L;
 	       } in
   let host = snd(io.make_host ())in
   let host' = { host with domains = domain :: host.domains } in
