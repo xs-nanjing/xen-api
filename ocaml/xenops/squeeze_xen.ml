@@ -398,7 +398,7 @@ let make_host ~verbose ~xc ~xs =
 						memory_actual_kib = 0L;
 						memory_max_kib = memory_max_kib;
 						inaccuracy_kib = 4L;
-						mem_free_kib = 0L;
+						free_memory_kib = 0L;
 					  } in
 					
 					(* If the domain has never run (detected by being paused, not shutdown and clocked up no CPU time)
@@ -436,7 +436,7 @@ let make_host ~verbose ~xc ~xs =
 						      dynamic_max_kib = max_kib;
 						      target_kib = target_kib;
 						      memory_actual_kib = memory_actual_kib;
-						      mem_free_kib = free_kib
+						      free_memory_kib = free_kib
 						  } ]
 					end
 				with

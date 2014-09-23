@@ -66,11 +66,11 @@ type domain = {
 	(** amount by which the target may differ from memory_actual and be declared a 'hit' *)
 	inaccuracy_kib: int64;
 	(** current unused memory size *)
-	mem_free_kib: int64;
+	free_memory_kib: int64;
 }
 
 let domain_make
-	domid can_balloon dynamic_min_kib target_kib dynamic_max_kib memory_actual_kib memory_max_kib inaccuracy_kib mem_free_kib =
+	domid can_balloon dynamic_min_kib target_kib dynamic_max_kib memory_actual_kib memory_max_kib inaccuracy_kib free_memory_kib =
 	{
 		domid = domid;
 		can_balloon = can_balloon;
@@ -80,7 +80,7 @@ let domain_make
 		memory_actual_kib = memory_actual_kib;
 		memory_max_kib = memory_max_kib;
 		inaccuracy_kib = inaccuracy_kib;
-		mem_free_kib = mem_free_kib;
+		free_memory_kib = free_memory_kib;
 	}
 
 let domain_to_string_pairs (x: domain) = 
@@ -94,7 +94,7 @@ let domain_to_string_pairs (x: domain) =
 		"memory_actual_kib", i64 x.memory_actual_kib;
 		"memory_max_kib", i64 x.memory_max_kib;
 		"inaccuracy_kib", i64 x.inaccuracy_kib;
-		"mem_free_kib", i64 x.mem_free_kib;
+		"free_memory_kib", i64 x.free_memory_kib;
 	]
 
 module IntMap = Map.Make(struct type t = int let compare = compare end)
@@ -176,7 +176,7 @@ let has_hit_target inaccuracy_kib memory_actual_kib target_kib =
 
 let short_string_of_domain domain = 
   Printf.sprintf "%d T%Ld A%Ld M%Ld F%Ld %s%s" domain.domid
-    domain.target_kib domain.memory_actual_kib domain.memory_max_kib domain.mem_free_kib
+    domain.target_kib domain.memory_actual_kib domain.memory_max_kib domain.free_memory_kib
     (if domain.can_balloon then "B" else "?")
     (string_of_direction (direction_of_actual domain.inaccuracy_kib domain.memory_actual_kib domain.target_kib))
 
@@ -266,7 +266,13 @@ let min_freeable ?(fistpoints=[]) domain =
 let min_allocatable domain = max 0L (domain.dynamic_max_kib -* domain.memory_actual_kib -* 2L ** domain.inaccuracy_kib)
   (** The range between dynamic_min and dynamic_max i.e. the total amount we may vary the balloon target
       NOT the total amount the memory_actual may vary. *)
-let range domain = max 0L (domain.dynamic_max_kib -* domain.dynamic_min_kib)
+
+let coefficient = ref 3.0
+
+let range domain = 
+  let used_memory = Int64.of_float (Int64.to_float (domain.memory_actual_kib -* domain.free_memory_kib) *. !coefficient) in
+  let current_min = max (min used_memory domain.dynamic_max_kib) domain.dynamic_min_kib in 
+  max 0L (current_min -* domain.dynamic_min_kib)
   
 module type POLICY = sig
   val compute_target_adjustments: ?fistpoints:(fistpoint list) -> bool -> host -> int64 -> (domain * int64) list
@@ -573,7 +579,7 @@ let change_host_free_memory ?fistpoints io required_mem_kib success_condition =
     | AdjustTargets actions ->
 		  (* Set all the balloon targets *)
 		  List.iter io.execute_action actions;
-		  io.wait 1.
+		  io.wait 150.
     end
   done
 
@@ -589,7 +595,7 @@ let free_memory_range ?fistpoints io min_kib max_kib =
 		 memory_actual_kib = 0L;
 		 memory_max_kib = 0L;
 		 inaccuracy_kib = 4L;
-		 mem_free_kib = 0L;
+		 free_memory_kib = 0L;
 	       } in
   let host = snd(io.make_host ())in
   let host' = { host with domains = domain :: host.domains } in
